@@ -1,2 +1,268 @@
-# FUTURE_CS_01
-Passive Vulnerability Assessment of testphp.vulnweb.com using Nmap, OWASP ZAP, and Browser DevTools. Includes security findings, risk analysis, screenshots, and remediation recommendations.
+Passive Vulnerability Assessment of testphp.vulnweb.com using Nmap, OWASP ZAP, and Browser DevTools. Includes security findings, risk analysis, screenshots, and remediation recommendations.[README.md](https://github.com/user-attachments/files/28755920/README.md)
+# 🔐 Vulnerability Assessment Report — testphp.vulnweb.com
+
+> **Assessment Date:** June 09, 2026  
+> **Assessed By:** Security Consultant  
+> **Report Version:** 1.0  
+> **Classification:** Educational / CONFIDENTIAL  
+> **Target:** [http://testphp.vulnweb.com](http://testphp.vulnweb.com) *(Acunetix intentionally vulnerable demo site)*
+
+---
+
+## 📋 Overview
+
+This repository documents a passive vulnerability assessment of **testphp.vulnweb.com**, a publicly available demo application intentionally configured with common web vulnerabilities by Acunetix. The assessment was conducted strictly in **read-only/passive mode** — no exploitation, no denial-of-service, no data modification.
+
+### Risk Summary
+
+| Critical | High | Medium | Low |
+|:---:|:---:|:---:|:---:|
+| **2** | **2** | **2** | **1** |
+
+---
+
+## 🛠️ Tools Used
+
+| Tool | Purpose |
+|------|---------|
+| **Nmap** | Port scanning & service detection |
+| **OWASP ZAP** (Passive Mode) | Spider, passive scan, header & cookie analysis |
+| **Browser DevTools** (F12) | Cookie inspection, HTTP headers, page source review |
+
+---
+
+## 📂 Repository Structure
+
+```
+.
+├── README.md
+├── Vulnerability_Assessment_Report.docx   ← Full written report
+├── screenshots/
+│   ├── step1_nmap_scan.png                ← Step 1: Reconnaissance
+│   ├── step2_zap_passive_scan.png         ← Step 2: Passive Scanning
+│   ├── step3a_cookies_devtools.png        ← Step 3: Insecure Cookies (F-05)
+│   ├── step3b_missing_headers.png         ← Step 3: Missing Headers (F-03)
+│   ├── step3c_html_source_comments.png    ← Step 3: Info Disclosure (F-04)
+│   ├── step4a_findings_table.png          ← Step 4: Risk Classification Table
+│   ├── step4b_risk_chart.png              ← Step 4: Risk Distribution Chart
+│   └── step4c_owasp_rating_example.png   ← Step 4: OWASP Scoring (F-01)
+```
+
+---
+
+## 🔍 Methodology — Step by Step
+
+### Step 1 — Reconnaissance (Nmap)
+
+Port scanning with Nmap to identify open services and running software versions.
+
+**Command used:**
+```bash
+nmap -sV testphp.vulnweb.com
+```
+
+**Finding:** Ports 21 (FTP), 80 (HTTP), and 8080 (HTTP alternate) found open — leading to F-06.
+
+📸 *Screenshot:* `screenshots/step1_nmap_scan.png`
+
+---
+
+### Step 2 — Passive Scanning (OWASP ZAP)
+
+OWASP ZAP spider and passive scanner used to detect insecure headers, cookies, and exposed endpoints **without sending any attack payloads**.
+
+**Steps performed:**
+1. Launch OWASP ZAP → Automated Scan → set target URL
+2. Enable Passive Scan only (no active attack)
+3. Spider the site to discover all endpoints
+4. Review Alerts panel for flagged issues
+
+**Findings from this step:** F-02 (XSS), F-03 (Missing Headers), F-05 (Insecure Cookies)
+
+📸 *Screenshot:* `screenshots/step2_zap_passive_scan.png`
+
+---
+
+### Step 3 — Manual Inspection (Browser DevTools)
+
+Manual review using browser Developer Tools (F12) to inspect HTTP responses, JavaScript sources, cookies, and form behaviour.
+
+#### 3A — Insecure Cookies (F-05) `[HIGH]`
+
+**How to reproduce:**
+1. Open `http://testphp.vulnweb.com` in Chrome/Firefox
+2. Press `F12` → **Application** tab → **Cookies** → select the domain
+3. Observe `PHPSESSID` — both `HttpOnly` and `Secure` flags are **absent**
+
+📸 *Screenshot:* `screenshots/step3a_cookies_devtools.png`
+
+---
+
+#### 3B — Missing Security Headers (F-03) `[MEDIUM]`
+
+**How to reproduce:**
+1. Open DevTools → **Network** tab → reload page (`Ctrl+R`)
+2. Click the main page request → **Headers** → scroll to **Response Headers**
+3. Confirm absence of: `X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`, `Strict-Transport-Security`
+
+📸 *Screenshot:* `screenshots/step3b_missing_headers.png`
+
+---
+
+#### 3C — Sensitive Information Disclosure (F-04) `[MEDIUM]`
+
+**How to reproduce:**
+1. Right-click the page → **View Page Source** (`Ctrl+U`)
+2. Press `Ctrl+F` → search for `<!--`
+3. Locate line 47: `<!-- DB: acuart, Table: users -->` — internal DB/table names exposed
+
+📸 *Screenshot:* `screenshots/step3c_html_source_comments.png`
+
+---
+
+### Step 4 — Risk Classification (OWASP Risk Rating)
+
+Each finding was rated using the **OWASP Risk Rating Methodology** — evaluating both **Likelihood** (threat agent, ease of discovery/exploit) and **Impact** (technical + business consequences).
+
+#### 4A — Complete Findings Table
+
+| ID | Finding | Risk Level | Fix Priority |
+|----|---------|:----------:|:------------:|
+| F-01 | SQL Injection — Login & Search Forms | 🔴 **CRITICAL** | Immediate |
+| F-02 | Cross-Site Scripting (XSS) — Reflected | 🟠 **HIGH** | Within 1 week |
+| F-03 | Missing Security Headers | 🟡 **MEDIUM** | Within 1 month |
+| F-04 | Sensitive Info Disclosure in HTML Source | 🟡 **MEDIUM** | Within 1 month |
+| F-05 | Insecure Cookies (No Secure/HttpOnly) | 🟠 **HIGH** | Within 1 week |
+| F-06 | Unnecessary Open Ports (FTP/8080) | 🟢 **LOW** | Within 3 months |
+
+📸 *Screenshot:* `screenshots/step4a_findings_table.png`
+
+---
+
+#### 4B — Risk Distribution
+
+```
+Critical  ██████████  2 findings
+High      ██████████  2 findings
+Medium    ██████████  2 findings
+Low       █████       1 finding
+```
+
+📸 *Screenshot:* `screenshots/step4b_risk_chart.png`
+
+---
+
+#### 4C — OWASP Scoring Example (F-01: SQL Injection)
+
+| Factor | Score | Reason |
+|--------|:-----:|--------|
+| Threat Agent Skill Level | 9 | No skill needed — automated tools (sqlmap) |
+| Ease of Discovery | 9 | Trivially visible in login forms |
+| Ease of Exploit | 9 | Single `'OR'1'='1` bypasses authentication |
+| Technical Impact | 9 | Full DB dump + auth bypass |
+| Business Impact | 9 | Data breach, GDPR/IT Act fines, reputational loss |
+| **Final Rating** | — | 🔴 **CRITICAL** |
+
+📸 *Screenshot:* `screenshots/step4c_owasp_rating_example.png`
+
+---
+
+## 🔎 Detailed Findings
+
+### F-01 — SQL Injection `[CRITICAL]`
+
+**Description:** Login and search forms pass user input directly into database queries without sanitisation.
+
+**Evidence:** Entering `' OR '1'='1` in the username field returns the admin dashboard without a password.
+
+**Remediation:**
+- Use parameterised queries / prepared statements in all DB calls
+- Deploy a Web Application Firewall (WAF)
+- Implement input validation and whitelist acceptable characters
+
+---
+
+### F-02 — Cross-Site Scripting (XSS) `[HIGH]`
+
+**Description:** User-supplied search queries and URL parameters are reflected in HTML responses without output encoding.
+
+**Evidence:** `<script>alert(1)</script>` in the search box executes in the browser.
+
+**Remediation:**
+- Encode all output with context-aware encoding (HTML, JS, URL)
+- Implement a strict Content-Security-Policy (CSP) header
+- Use a modern framework with auto-escaping (React, Angular)
+
+---
+
+### F-03 — Missing Security Headers `[MEDIUM]`
+
+**Description:** HTTP responses lack `X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`, and `Strict-Transport-Security`.
+
+**Evidence:** OWASP ZAP passive scan reported 4 missing headers on all responses.
+
+**Remediation:**
+- `X-Frame-Options: SAMEORIGIN`
+- `X-Content-Type-Options: nosniff`
+- `Content-Security-Policy: default-src 'self'`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+
+---
+
+### F-04 — Sensitive Information Disclosure `[MEDIUM]`
+
+**Description:** HTML comments and JS source files expose internal path names, database/table names, and a developer email.
+
+**Evidence:** `<!-- DB: acuart, Table: users -->` found in page source at line 47.
+
+**Remediation:**
+- Remove all HTML comments before production deployment
+- Minify and obfuscate JavaScript
+- Audit for accidentally exposed `.git` or backup files
+
+---
+
+### F-05 — Insecure Cookies `[HIGH]`
+
+**Description:** Session cookies set without `Secure` or `HttpOnly` attributes — accessible to client-side scripts and transmittable over HTTP.
+
+**Evidence:** DevTools → Application → Cookies shows `PHPSESSID` without Secure/HttpOnly flags.
+
+**Remediation:**
+- Set `HttpOnly` flag on all session cookies
+- Set `Secure` flag so cookies transmit over HTTPS only
+- Regenerate session IDs after login
+
+---
+
+### F-06 — Unnecessary Open Ports `[LOW]`
+
+**Description:** Nmap identified ports 21 (FTP) and 8080 open alongside port 80. FTP transmits credentials in plaintext.
+
+**Evidence:** `nmap -sV testphp.vulnweb.com` shows ports 21, 80, 8080 open.
+
+**Remediation:**
+- Disable FTP; migrate to SFTP or FTPS
+- Close port 8080 if not actively used
+- Restrict port access to whitelisted IPs via firewall rules
+
+---
+
+## 📅 Recommended Fix Timeline
+
+| Timeframe | Actions |
+|-----------|---------|
+| **0–7 days (Immediate)** | Fix SQL injection with parameterised queries; apply Secure & HttpOnly cookie flags |
+| **1–4 weeks (Short-term)** | Deploy CSP and missing HTTP headers; fix XSS; remove HTML comments |
+| **1–3 months (Long-term)** | Close unnecessary ports; schedule quarterly scans; implement WAF; security training |
+
+---
+
+## ⚠️ Disclaimer
+
+> This assessment was conducted solely on **testphp.vulnweb.com**, a site designed and maintained by Acunetix for security testing purposes. No real customer data was accessed. All testing was performed **passively (read-only)** with no active exploitation, denial-of-service attempts, or data modification.  
+> This repository is intended for **educational use only** and follows ethical security consulting practices.
+
+---
+
+*Report Version 1.0 — June 09, 2026*
